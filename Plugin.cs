@@ -30,7 +30,7 @@ namespace Cal_Multiplayer
         private bool showForm = false;
 
         private float positionSyncTimer = 0f;
-        private float positionSyncInterval = 2.5f;
+        private readonly float positionSyncInterval = 2.5f;
 
         private void Awake()
         {
@@ -187,7 +187,7 @@ namespace Cal_Multiplayer
 
         // TODO: Return requested cat position using a function
 
-        private void syncCatPosition(string catObjectName, float newPosX, float newPosY)
+        private void SyncCatPosition(string catObjectName, float newPosX, float newPosY)
         {
             for (int i = 0; i < 12; i++)
             {
@@ -250,7 +250,7 @@ namespace Cal_Multiplayer
             try
             {
                 object catAction = Enum.Parse(catActionType, actionName);
-                performActionMethod.Invoke(npcPathfinder, new object[] { catAction, actionDelay });
+                performActionMethod.Invoke(npcPathfinder, [catAction, actionDelay]);
             }
             catch (Exception ex)
             {
@@ -441,13 +441,13 @@ namespace Cal_Multiplayer
                                     var posX = float.Parse(command.Split(':')[1].Split(',')[0]);
                                     var posY = float.Parse(command.Split(':')[1].Split(',')[1]);
                                     Logger.LogInfo("Syncing clone");
-                                    syncCatPosition("NPC Cat(Clone)", posX, posY);
+                                    SyncCatPosition("NPC Cat(Clone)", posX, posY);
                                     break;
                                 case "StartPos":
                                     var startPosX = float.Parse(command.Split(':')[1].Split(',')[0]);
                                     var startPosY = float.Parse(command.Split(':')[1].Split(',')[1]);
                                     Logger.LogInfo("Syncing cat");
-                                    syncCatPosition("Cat", startPosX, startPosY);
+                                    SyncCatPosition("Cat", startPosX, startPosY);
                                     break;
                                 default:
                                     Logger.LogWarning($"Unknown command type: {command}");
