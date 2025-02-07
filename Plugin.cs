@@ -9,6 +9,7 @@ using System.Reflection;
 using System;
 using UnityEngine;
 using System.Globalization;
+using System.IO;
 
 namespace Cal_Multiplayer
 {
@@ -166,17 +167,7 @@ namespace Cal_Multiplayer
                     positionSyncTimer += Time.deltaTime;
                     if (positionSyncTimer > positionSyncInterval)
                     {
-                        GameObject catPart = GameObject.Find("Cat/Cat Part 0");
-                        if (catPart != null)
-                        {
-                            SendCommand(stream, "PositionSync:" + catPart.transform.position.x + "," + catPart.transform.position.y + ";");
-                            Logger.LogInfo("Sending sync command for pos: " + catPart.transform.position.x + "," + catPart.transform.position.y);
-                            positionSyncTimer = 0f;
-                        }
-                        else
-                        {
-                            Logger.LogError("Cannot sync pos: cat or path not found");
-                        }
+                        syncAllParts(stream);
                     }
                 }
             }
@@ -190,7 +181,39 @@ namespace Cal_Multiplayer
             return false;
         }
 
-        // TODO: Return requested cat position using a function
+        private void SyncCatPart(string gameObjectSelector, float newPosX, float newPosY)
+        {
+            GameObject gameObject = GameObject.Find(gameObjectSelector);
+            if (gameObject != null)
+            {
+                Vector3 newPosition = gameObject.transform.position;
+                newPosition.x = newPosX;
+                newPosition.y = newPosY;
+                gameObject.transform.position = Vector3.Lerp(gameObject.transform.position, newPosition, Time.deltaTime * 10);
+            }
+            else
+            {
+                Logger.LogError("Cannot sync metaball plane: cat or path not found");
+            }
+        }
+
+        private void syncAllParts(NetworkStream stream)
+        {
+            for (int i = 0; i < 12; i++)
+            {
+                GameObject catPart = GameObject.Find("Cat/Cat Part " + i.ToString());
+                if (catPart != null)
+                {
+                    SendCommand(stream, "PartialSync:" + i.ToString() + "," + catPart.transform.position.x + "," + catPart.transform.position.y + ";");
+                    Logger.LogInfo("Sending sync command for pos: " + catPart.transform.position.x + "," + catPart.transform.position.y);
+                    positionSyncTimer = 0f;
+                }
+                else
+                {
+                    Logger.LogError("Cannot sync part: selector error");
+                }
+            }
+        }
 
         private void SyncCatPosition(string catObjectName, float newPosX, float newPosY)
         {
@@ -201,6 +224,7 @@ namespace Cal_Multiplayer
                     Logger.LogInfo("Cat is liquid, won't sync other parts");
                     continue;
                 }
+
                 GameObject catPart = GameObject.Find(catObjectName + "/Cat Part " + i.ToString());
                 if (catPart != null)
                 {
@@ -368,6 +392,7 @@ namespace Cal_Multiplayer
                 byte[] buffer = new byte[1024];
 
                 // Initial position syncing
+                // This non-precise was of teleporting the cat is fine here
                 if (isHosting)
                 {
                     GameObject npcCatPart = GameObject.Find("NPC Cat(Clone)/Cat Part 0");
@@ -499,6 +524,13 @@ namespace Cal_Multiplayer
                                     Logger.LogInfo("Syncing clone");
                                     SyncCatPosition("NPC Cat(Clone)", posX, posY);
                                     break;
+                                case "PartialSync":
+                                    var part = command.Split(':')[1].Split(',')[0];
+                                    var partPosX = float.Parse(command.Split(':')[1].Split(',')[1], CultureInfo.InvariantCulture);
+                                    var partPosY = float.Parse(command.Split(':')[1].Split(',')[2], CultureInfo.InvariantCulture);
+                                    Logger.LogInfo("Syncing part " + part);
+                                    SyncCatPart("NPC Cat(Clone)/Cat Part " + part, partPosX, partPosY);
+                                    break;
                                 case "StartPos":
                                     var startPosX = float.Parse(command.Split(':')[1].Split(',')[0], CultureInfo.InvariantCulture);
                                     var startPosY = float.Parse(command.Split(':')[1].Split(',')[1], CultureInfo.InvariantCulture);
@@ -625,7 +657,7 @@ namespace Cal_Multiplayer
 
                 if (GUILayout.Button("Priorizite accouracy"))
                 {
-                    positionSyncInterval = 0.01f;
+                    positionSyncInterval = 0.03f;
                     showSyncSettingsForm = false;
                     showForm = true;
                 }
