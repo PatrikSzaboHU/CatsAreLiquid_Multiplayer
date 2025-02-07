@@ -8,6 +8,7 @@ using System.Text;
 using System.Reflection;
 using System;
 using UnityEngine;
+using System.Globalization;
 
 namespace Cal_Multiplayer
 {
@@ -17,21 +18,26 @@ namespace Cal_Multiplayer
         internal static new ManualLogSource Logger;
 
         private bool isNetworkMultiplayerEnabled = false;
+        private bool isInFirstSyncPhase = true; // Toggles automatic timed pos syncs. Starts off true, switches to false once everything is initialized.
         private bool isHosting = false;
         private TcpListener server;
         private TcpClient client;
         private TcpClient incomingClient;
         private CancellationTokenSource networkCancellationSource;
         private string hostIP = "";
+
         private bool showForm = false;
+        private bool showSyncSettingsForm = false;
 
         private float positionSyncTimer = 0f;
-        private readonly float positionSyncInterval = 2.5f;
+        private float positionSyncInterval = 1.5f;
 
         private void Awake()
         {
             Logger = base.Logger;
             Logger.LogInfo("Multiplayer plugin loaded!");
+            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
         }
 
         private void Update()
@@ -155,19 +161,22 @@ namespace Cal_Multiplayer
                 }
 
                 // Position sync send
-                positionSyncTimer += Time.deltaTime;
-                if (positionSyncTimer > positionSyncInterval)
+                if (!isInFirstSyncPhase)
                 {
-                    GameObject catPart = GameObject.Find("Cat/Cat Part 0");
-                    if (catPart != null)
+                    positionSyncTimer += Time.deltaTime;
+                    if (positionSyncTimer > positionSyncInterval)
                     {
-                        SendCommand(stream, "PositionSync:" + catPart.transform.position.x + "," + catPart.transform.position.y + ";");
-                        Logger.LogInfo("Sending sync command for pos: " + catPart.transform.position.x + "," + catPart.transform.position.y);
-                        positionSyncTimer = 0f;
-                    }
-                    else
-                    {
-                        Logger.LogError("Cannot sync pos: cat or path not found");
+                        GameObject catPart = GameObject.Find("Cat/Cat Part 0");
+                        if (catPart != null)
+                        {
+                            SendCommand(stream, "PositionSync:" + catPart.transform.position.x + "," + catPart.transform.position.y + ";");
+                            Logger.LogInfo("Sending sync command for pos: " + catPart.transform.position.x + "," + catPart.transform.position.y);
+                            positionSyncTimer = 0f;
+                        }
+                        else
+                        {
+                            Logger.LogError("Cannot sync pos: cat or path not found");
+                        }
                     }
                 }
             }
@@ -184,6 +193,56 @@ namespace Cal_Multiplayer
         // TODO: Return requested cat position using a function
 
         private void SyncCatPosition(string catObjectName, float newPosX, float newPosY)
+        {
+            for (int i = 0; i < 12; i++)
+            {
+                if (GameObject.Find(catObjectName + "/Liquid Features(Clone)") == null && i < 0)
+                {
+                    Logger.LogInfo("Cat is liquid, won't sync other parts");
+                    continue;
+                }
+                GameObject catPart = GameObject.Find(catObjectName + "/Cat Part " + i.ToString());
+                if (catPart != null)
+                {
+                    Vector3 newPosition = catPart.transform.position;
+                    newPosition.x = newPosX;
+                    newPosition.y = newPosY;
+                    catPart.transform.position = Vector3.Lerp(catPart.transform.position, newPosition, Time.deltaTime * 10); // Smooths out movement instead of hard overwrite
+                }
+                else
+                {
+                    Logger.LogError("Cannot do function pos sync: cat or path not found");
+                }
+            }
+
+            GameObject metaballPlane = GameObject.Find(catObjectName + "/Metaball Plane");
+            if (metaballPlane != null)
+            {
+                Vector3 newPosition = metaballPlane.transform.position;
+                newPosition.x = newPosX;
+                newPosition.y = newPosY;
+                metaballPlane.transform.position = Vector3.Lerp(metaballPlane.transform.position, newPosition, Time.deltaTime * 10);
+            }
+            else
+            {
+                Logger.LogError("Cannot sync metaball plane: cat or path not found");
+            }
+
+            GameObject metaballCamera = GameObject.Find(catObjectName + "/Metaball Camera");
+            if (metaballCamera != null)
+            {
+                Vector3 newPosition = metaballCamera.transform.position;
+                newPosition.x = newPosX;
+                newPosition.y = newPosY;
+                metaballCamera.transform.position = Vector3.Lerp(metaballCamera.transform.position, newPosition, Time.deltaTime * 10);
+            }
+            else
+            {
+                Logger.LogError("Cannot sync metaball camera: cat or path not found");
+            }
+        }
+
+        private void SetCatPosition(string catObjectName, float newPosX, float newPosY) // Sets pos without interpolation
         {
             for (int i = 0; i < 12; i++)
             {
@@ -271,7 +330,7 @@ namespace Cal_Multiplayer
                         _ = HandleClient(incomingClient, cancellationToken);
                     }
 
-                    await Task.Delay(100); // Avoid high CPU usage
+                    await Task.Delay(10); // Avoid high CPU usage
                 }
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
@@ -401,6 +460,7 @@ namespace Cal_Multiplayer
                             }
 
                             Logger.LogInfo("Entering switch stmt");
+                            Logger.LogInfo(command);
                             switch (command.Split(':')[0])
                             {
                                 case "MoveAction":
@@ -434,16 +494,17 @@ namespace Cal_Multiplayer
                                     }
                                     break;
                                 case "PositionSync":
-                                    var posX = float.Parse(command.Split(':')[1].Split(',')[0]);
-                                    var posY = float.Parse(command.Split(':')[1].Split(',')[1]);
+                                    var posX = float.Parse(command.Split(':')[1].Split(',')[0], CultureInfo.InvariantCulture);
+                                    var posY = float.Parse(command.Split(':')[1].Split(',')[1], CultureInfo.InvariantCulture);
                                     Logger.LogInfo("Syncing clone");
                                     SyncCatPosition("NPC Cat(Clone)", posX, posY);
                                     break;
                                 case "StartPos":
-                                    var startPosX = float.Parse(command.Split(':')[1].Split(',')[0]);
-                                    var startPosY = float.Parse(command.Split(':')[1].Split(',')[1]);
+                                    var startPosX = float.Parse(command.Split(':')[1].Split(',')[0], CultureInfo.InvariantCulture);
+                                    var startPosY = float.Parse(command.Split(':')[1].Split(',')[1], CultureInfo.InvariantCulture);
                                     Logger.LogInfo("Syncing cat");
-                                    SyncCatPosition("Cat", startPosX, startPosY);
+                                    SetCatPosition("Cat", startPosX, startPosY);
+                                    isInFirstSyncPhase = false; // Enables auto pos syncs
                                     break;
                                 default:
                                     Logger.LogWarning($"Unknown command type: {command}");
@@ -518,7 +579,7 @@ namespace Cal_Multiplayer
         {
             if (showForm)
             {
-                GUILayout.BeginArea(new Rect(Screen.width / 2 - 160, Screen.height / 2 - 80, 320, 160), GUI.skin.box);
+                GUILayout.BeginArea(new Rect(Screen.width / 2 - 160, Screen.height / 2 - 80, 320, 180), GUI.skin.box);
                 GUILayout.BeginVertical();
 
                 GUILayout.Label("You might need to pause the game to see your cursor.");
@@ -532,9 +593,47 @@ namespace Cal_Multiplayer
                     showForm = false;
                 }
 
+                if (GUILayout.Button("Sync/Player Settings"))
+                {
+                    showForm = false;
+                    showSyncSettingsForm = true;
+                }
+
                 if (GUILayout.Button("Close"))
                 {
                     showForm = false;
+                }
+
+                GUILayout.EndVertical();
+                GUILayout.EndArea();
+            }
+
+            if (showSyncSettingsForm)
+            {
+                GUILayout.BeginArea(new Rect(Screen.width / 2 - 160, Screen.height / 2 - 80, 320, 200), GUI.skin.box);
+                GUILayout.BeginVertical();
+
+                GUILayout.Label("Prioritize smoothness: Position syncing is less frequent, ensuring smoothness at the cost of position accouracy for movement happening between a second (ex.: Jumps might not be accourate).");
+                GUILayout.Label("Prioritize accouracy: Position syncing is more frequent, ensuring accouracy and less latency at the cost of smoothness (character's sides might blink).");
+
+                if (GUILayout.Button("Prioritize smoothness (default)"))
+                {
+                    positionSyncInterval = 1.5f;
+                    showSyncSettingsForm = false;
+                    showForm = true;
+                }
+
+                if (GUILayout.Button("Priorizite accouracy"))
+                {
+                    positionSyncInterval = 0.01f;
+                    showSyncSettingsForm = false;
+                    showForm = true;
+                }
+
+                if (GUILayout.Button("Back"))
+                {
+                    showSyncSettingsForm = false;
+                    showForm = true;
                 }
 
                 GUILayout.EndVertical();
