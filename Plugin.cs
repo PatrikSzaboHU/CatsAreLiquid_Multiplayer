@@ -438,18 +438,14 @@ namespace Cal_Multiplayer
                 GameObject npc = GameObject.Find("NPC Cat(Clone)");
                 if (npc != null)
                 {
-                    Logger.LogInfo("NPC Found.");
                     var npcPathfinder = npc.GetComponent("NPCPathfinder");
                     if (npcPathfinder != null)
                     {
-                        Logger.LogInfo("Pathfinder Found.");
                         MethodInfo performActionMethod = npcPathfinder.GetType().GetMethod("PerformAction", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
                         if (performActionMethod != null)
                         {
-                            Logger.LogInfo("PFM Not null.");
                             Type catActionType = performActionMethod.GetParameters()[0].ParameterType;
 
-                            Logger.LogInfo("Getting network data");
                             NetworkStream stream;
                             if (isHosting)
                             {
@@ -459,8 +455,6 @@ namespace Cal_Multiplayer
                                 stream = client.GetStream();
                             }
 
-                            Logger.LogInfo("Entering switch stmt");
-                            Logger.LogInfo(command);
                             switch (command.Split(':')[0])
                             {
                                 case "MoveAction":
