@@ -18,7 +18,7 @@ namespace Cal_Multiplayer
         internal static new ManualLogSource Logger;
 
         private bool isNetworkMultiplayerEnabled = false;
-        private bool isInFirstSyncPhase = true; // Toggles automatic timed pos syncs. Starts off true, switches to false once everything is initialized.
+        private bool isInFirstSyncPhase = true; // Toggles automatic position syncs. Starts off true, switches to false once everything is initialized.
         private bool isHosting = false;
         private TcpListener server;
         private TcpClient client;
