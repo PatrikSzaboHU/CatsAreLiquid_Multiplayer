@@ -41,7 +41,7 @@ namespace Cal_Multiplayer
         private void Awake()
         {
             Logger = base.Logger;
-            Logger.LogInfo("Multiplayer plugin loaded!");
+            Logger.LogInfo("Mod successfully loaded!");
             
             // Make sure all values are in the correct cultural format
             // no matter what language or region the host machine has set
@@ -81,11 +81,11 @@ namespace Cal_Multiplayer
                     if (catPart != null)
                     {
                         SendCommand(stream, "PositionSync:" + catPart.transform.position.x + "," + catPart.transform.position.y + ";");
-                        Logger.LogInfo("Sending sync command for pos: " + catPart.transform.position.x + "," + catPart.transform.position.y);
+                        Logger.LogInfo("Sending sync command for position: " + catPart.transform.position.x + "," + catPart.transform.position.y);
                     }
                     else
                     {
-                        Logger.LogError("Cannot send pos: cat or path not found");
+                        Logger.LogError("Cannot send position: cat or path not found");
                     }
                 }
                 
@@ -97,11 +97,11 @@ namespace Cal_Multiplayer
                     if (catPart != null)
                     {
                         SendCommand(stream, "PositionSync:" + catPart.transform.position.x + "," + catPart.transform.position.y + ";");
-                        Logger.LogInfo("Sending sync command for pos: " + catPart.transform.position.x + "," + catPart.transform.position.y);
+                        Logger.LogInfo("Sending sync command for position: " + catPart.transform.position.x + "," + catPart.transform.position.y);
                     }
                     else
                     {
-                        Logger.LogError("Cannot send pos: cat or path not found");
+                        Logger.LogError("Cannot send position: cat or path not found");
                     }
                 }
                 
@@ -113,11 +113,11 @@ namespace Cal_Multiplayer
                     if (catPart != null)
                     {
                         SendCommand(stream, "PositionSync:" + catPart.transform.position.x + "," + catPart.transform.position.y + ";");
-                        Logger.LogInfo("Sending sync command for pos: " + catPart.transform.position.x + "," + catPart.transform.position.y);
+                        Logger.LogInfo("Sending sync command for position: " + catPart.transform.position.x + "," + catPart.transform.position.y);
                     }
                     else
                     {
-                        Logger.LogError("Cannot send pos: cat or path not found");
+                        Logger.LogError("Cannot send position: cat or path not found");
                     }
                 }
 
@@ -131,11 +131,11 @@ namespace Cal_Multiplayer
                     if (catPart != null)
                     {
                         SendCommand(stream, "PositionSync:" + catPart.transform.position.x + "," + catPart.transform.position.y + ";");
-                        Logger.LogInfo("Sending sync command for pos: " + catPart.transform.position.x + "," + catPart.transform.position.y);
+                        Logger.LogInfo("Sending sync command for position: " + catPart.transform.position.x + "," + catPart.transform.position.y);
                     }
                     else
                     {
-                        Logger.LogError("Cannot send pos: cat or path not found");
+                        Logger.LogError("Cannot send position: cat or path not found");
                     }
                 }
                 
@@ -147,11 +147,11 @@ namespace Cal_Multiplayer
                     if (catPart != null)
                     {
                         SendCommand(stream, "PositionSync:" + catPart.transform.position.x + "," + catPart.transform.position.y + ";");
-                        Logger.LogInfo("Sending sync command for pos: " + catPart.transform.position.x + "," + catPart.transform.position.y);
+                        Logger.LogInfo("Sending sync command for position: " + catPart.transform.position.x + "," + catPart.transform.position.y);
                     }
                     else
                     {
-                        Logger.LogError("Cannot send pos: cat or path not found");
+                        Logger.LogError("Cannot send position: cat or path not found");
                     }
                 }
                 if (Input.GetKeyDown(KeyCode.Space))
@@ -161,11 +161,11 @@ namespace Cal_Multiplayer
                     if (catPart != null)
                     {
                         SendCommand(stream, "PositionSync:" + catPart.transform.position.x + "," + catPart.transform.position.y + ";");
-                        Logger.LogInfo("Sending sync command for pos: " + catPart.transform.position.x + "," + catPart.transform.position.y);
+                        Logger.LogInfo("Sending sync command for position: " + catPart.transform.position.x + "," + catPart.transform.position.y);
                     }
                     else
                     {
-                        Logger.LogError("Cannot send pos: cat or path not found");
+                        Logger.LogError("Cannot send position: cat or path not found");
                     }
                 }
                 
@@ -177,11 +177,11 @@ namespace Cal_Multiplayer
                     if (catPart != null)
                     {
                         SendCommand(stream, "PositionSync:" + catPart.transform.position.x + "," + catPart.transform.position.y + ";");
-                        Logger.LogInfo("Sending sync command for pos: " + catPart.transform.position.x + "," + catPart.transform.position.y);
+                        Logger.LogInfo("Sending sync command for position: " + catPart.transform.position.x + "," + catPart.transform.position.y);
                     }
                     else
                     {
-                        Logger.LogError("Cannot send pos: cat or path not found");
+                        Logger.LogError("Cannot send position: cat or path not found");
                     }
                 }
 
@@ -197,12 +197,12 @@ namespace Cal_Multiplayer
                         if (catPart != null)
                         {
                             SendCommand(stream, "PositionSync:" + catPart.transform.position.x + "," + catPart.transform.position.y + ";");
-                            Logger.LogInfo("Sending sync command for pos: " + catPart.transform.position.x + "," + catPart.transform.position.y);
+                            Logger.LogInfo("Sending sync command for position: " + catPart.transform.position.x + "," + catPart.transform.position.y);
                             positionSyncTimer = 0f;
                         }
                         else
                         {
-                            Logger.LogError("Cannot sync pos: cat or path not found");
+                            Logger.LogError("Cannot sync position: cat or path not found");
                         }
                     }
                 }
@@ -240,7 +240,7 @@ namespace Cal_Multiplayer
                 }
                 else
                 {
-                    Logger.LogError("Cannot do function pos sync: cat or path not found");
+                    Logger.LogError("Cannot do position sync: cat or path not found");
                 }
             }
 
@@ -274,7 +274,7 @@ namespace Cal_Multiplayer
         }
 
         // Sets lumi's position to a new position WITHOUT interpolation
-        private void SetCatPosition(string catObjectName, float newPosX, float newPosY) // Sets pos without interpolation
+        private void SetCatPosition(string catObjectName, float newPosX, float newPosY) // Sets position without interpolation
         {
             for (int i = 0; i < 12; i++)
             {
@@ -293,7 +293,7 @@ namespace Cal_Multiplayer
                 }
                 else
                 {
-                    Logger.LogError("Cannot do function pos sync: cat or path not found");
+                    Logger.LogError("Cannot do function position sync: cat or path not found");
                 }
             }
 
@@ -335,7 +335,7 @@ namespace Cal_Multiplayer
         // Invokes an NPC action (MoveLeft, MoveRight, ...) for animation sync and smoothness 
         private void InvokeAction(Component npcPathfinder, MethodInfo performActionMethod, Type catActionType, string actionName, float actionDelay)
         {
-            Logger.LogInfo("InvokeAction well... invoked lmao");
+            Logger.LogInfo("Invoking NPC action " + actionName);
             try
             {
                 object catAction = Enum.Parse(catActionType, actionName);
@@ -416,7 +416,7 @@ namespace Cal_Multiplayer
                     }
                     else
                     {
-                        Logger.LogError("Cannot do initial pos sync (host): npc or path not found");
+                        Logger.LogError("Cannot do initial position sync (host): npc or path not found");
                     }
                 }
                 else
@@ -429,7 +429,7 @@ namespace Cal_Multiplayer
                     }
                     else
                     {
-                        Logger.LogError("Cannot do initial pos sync: cat or path not found");
+                        Logger.LogError("Cannot do initial position sync (client): cat or path not found");
                     }
                 }
 
@@ -441,7 +441,7 @@ namespace Cal_Multiplayer
                         // Read the incoming data
                         int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken);
                         string message = Encoding.UTF8.GetString(buffer, 0, bytesRead).Trim();
-                        Logger.LogInfo($"RX: {message}");
+                        Logger.LogInfo("Received: " + message);
 
                         if (!string.IsNullOrWhiteSpace(message))
                         {
@@ -449,7 +449,7 @@ namespace Cal_Multiplayer
                             foreach (var command in message.Split(';', (char)StringSplitOptions.RemoveEmptyEntries))
                             {
                                 // Pass on the command to execute
-                                Logger.LogInfo($"Executing {command}");
+                                Logger.LogInfo("Executing command " + command);
                                 HandleNetworkCommand(command.Trim());
                             }
                         }
@@ -553,7 +553,7 @@ namespace Cal_Multiplayer
                                     var startPosY = float.Parse(command.Split(':')[1].Split(',')[1], CultureInfo.InvariantCulture);
                                     Logger.LogInfo("Syncing cat");
                                     SetCatPosition("Cat", startPosX, startPosY);
-                                    isInFirstSyncPhase = false; // Enables auto pos syncs
+                                    isInFirstSyncPhase = false; // Enables automatic position syncs
                                     break;
                                 
                                 default:
