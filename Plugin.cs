@@ -1,4 +1,7 @@
-﻿using BepInEx;
+﻿// Cats are Liquid Multiplayer mod
+// Made by Patrik Szabó
+
+using BepInEx;
 using BepInEx.Logging;
 using System.Net.Sockets;
 using System.Net;
@@ -17,38 +20,48 @@ namespace Cal_Multiplayer
     {
         internal static new ManualLogSource Logger;
 
+        // Variables for networking
         private bool isNetworkMultiplayerEnabled = false;
         private bool isInFirstSyncPhase = true; // Toggles automatic position syncs. Starts off true, switches to false once everything is initialized.
-        private bool isHosting = false;
+        private bool isHosting = false; // Is this player the host
         private TcpListener server;
         private TcpClient client;
         private TcpClient incomingClient;
-        private CancellationTokenSource networkCancellationSource;
+        private CancellationTokenSource networkCancellationSource; // Token that cancels network refreshes
         private string hostIP = "";
 
-        private bool showForm = false;
+        // Variables for form and UI
+        private bool showForm = false; // Corresponds to network form
         private bool showSyncSettingsForm = false;
 
-        private float positionSyncTimer = 0f;
-        private float positionSyncInterval = 1.5f;
+        // Variables for position syncing
+        private float positionSyncTimer = 0f; // Current time
+        private float positionSyncInterval = 1.5f; // How often the position syncs (in seconds)
 
         private void Awake()
         {
             Logger = base.Logger;
             Logger.LogInfo("Multiplayer plugin loaded!");
+            
+            // Make sure all values are in the correct cultural format
+            // no matter what language or region the host machine has set
+            // (required so the program can correctly split the values)
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
             CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
         }
 
         private void Update()
         {
+            // Shows the main network form/UI
             if (Input.GetKeyDown(KeyCode.F3))
             {
                 showForm = !showForm;
             }
 
+            // Only executes if a client is connected or connected to a host
             if ((incomingClient != null && incomingClient.Connected) || (client != null && client.Connected))
             {
+                // Get the correct network stream
                 NetworkStream stream;
                 if (isHosting)
                 {
@@ -58,7 +71,9 @@ namespace Cal_Multiplayer
                     stream = client.GetStream();
                 }
 
-                // Release
+                // Handlers for releasing keys
+                
+                // Horizontal movement (keys A+D)
                 if ((Input.GetKeyUp(KeyCode.D) && !OtherKeysDown(KeyCode.D)) || (Input.GetKeyUp(KeyCode.A) && !OtherKeysDown(KeyCode.A)))
                 {
                     SendCommand(stream, "MoveAction:S;");
@@ -73,6 +88,8 @@ namespace Cal_Multiplayer
                         Logger.LogError("Cannot send pos: cat or path not found");
                     }
                 }
+                
+                // Jumping
                 if (Input.GetKeyUp(KeyCode.Space))
                 {
                     SendCommand(stream, "MoveAction:C;");
@@ -87,6 +104,8 @@ namespace Cal_Multiplayer
                         Logger.LogError("Cannot send pos: cat or path not found");
                     }
                 }
+                
+                // Liquid
                 if (Input.GetKeyUp(KeyCode.S))
                 {
                     SendCommand(stream, "MoveAction:N;");
@@ -102,7 +121,9 @@ namespace Cal_Multiplayer
                     }
                 }
 
-                // Press
+                // Handlers for pressing keys
+                
+                // Right
                 if (Input.GetKeyDown(KeyCode.D))
                 {
                     SendCommand(stream, "MoveAction:R;");
@@ -117,6 +138,8 @@ namespace Cal_Multiplayer
                         Logger.LogError("Cannot send pos: cat or path not found");
                     }
                 }
+                
+                // Left
                 if (Input.GetKeyDown(KeyCode.A))
                 {
                     SendCommand(stream, "MoveAction:L;");
@@ -145,6 +168,8 @@ namespace Cal_Multiplayer
                         Logger.LogError("Cannot send pos: cat or path not found");
                     }
                 }
+                
+                // Liquid
                 if (Input.GetKeyDown(KeyCode.S))
                 {
                     SendCommand(stream, "MoveAction:W;");
@@ -160,7 +185,9 @@ namespace Cal_Multiplayer
                     }
                 }
 
-                // Position sync send
+                // Automatic position syncing
+                // If the player is syncing the position for the first time,
+                // this waits until that is finished to avoid sending the wrong positions
                 if (!isInFirstSyncPhase)
                 {
                     positionSyncTimer += Time.deltaTime;
@@ -182,6 +209,8 @@ namespace Cal_Multiplayer
             }
         }
 
+        // Check for movement cancellation for the opposite direction on
+        // the horizontal axis
         private bool OtherKeysDown(KeyCode releasedKey)
         {
             if (releasedKey != KeyCode.D && Input.GetKey(KeyCode.D)) return true;
@@ -190,10 +219,10 @@ namespace Cal_Multiplayer
             return false;
         }
 
-        // TODO: Return requested cat position using a function
-
+        // Sets and interpolates the lumi's position to a new position 
         private void SyncCatPosition(string catObjectName, float newPosX, float newPosY)
         {
+            // Set all 12 cat parts to the new position
             for (int i = 0; i < 12; i++)
             {
                 if (GameObject.Find(catObjectName + "/Liquid Features(Clone)") == null && i < 0)
@@ -215,6 +244,7 @@ namespace Cal_Multiplayer
                 }
             }
 
+            // Set metaball plane's position
             GameObject metaballPlane = GameObject.Find(catObjectName + "/Metaball Plane");
             if (metaballPlane != null)
             {
@@ -228,6 +258,7 @@ namespace Cal_Multiplayer
                 Logger.LogError("Cannot sync metaball plane: cat or path not found");
             }
 
+            // Set metaball camera's position
             GameObject metaballCamera = GameObject.Find(catObjectName + "/Metaball Camera");
             if (metaballCamera != null)
             {
@@ -242,6 +273,7 @@ namespace Cal_Multiplayer
             }
         }
 
+        // Sets lumi's position to a new position WITHOUT interpolation
         private void SetCatPosition(string catObjectName, float newPosX, float newPosY) // Sets pos without interpolation
         {
             for (int i = 0; i < 12; i++)
@@ -292,6 +324,7 @@ namespace Cal_Multiplayer
             }
         }
 
+        // Sends data over the tcp tunnel
         private void SendCommand(NetworkStream stream, string command)
         {
             Logger.LogInfo("Sending " + command);
@@ -299,6 +332,7 @@ namespace Cal_Multiplayer
             stream.Write(data, 0, data.Length);
         }
 
+        // Invokes an NPC action (MoveLeft, MoveRight, ...) for animation sync and smoothness 
         private void InvokeAction(Component npcPathfinder, MethodInfo performActionMethod, Type catActionType, string actionName, float actionDelay)
         {
             Logger.LogInfo("InvokeAction well... invoked lmao");
@@ -313,6 +347,7 @@ namespace Cal_Multiplayer
             }
         }
 
+        // Starts hosting the server (peer-to-peer)
         private async Task StartServer(CancellationToken cancellationToken)
         {
             try
@@ -344,6 +379,7 @@ namespace Cal_Multiplayer
             }
         }
 
+        // Connects to a specified host
         private async Task StartClient(CancellationToken cancellationToken)
         {
             try
@@ -360,6 +396,7 @@ namespace Cal_Multiplayer
             }
         }
 
+        // Handles a connected tcp client. Gets available data and passes it on to execute.
         private async Task HandleClient(TcpClient tcpClient, CancellationToken cancellationToken)
         {
             try
@@ -368,6 +405,7 @@ namespace Cal_Multiplayer
                 byte[] buffer = new byte[1024];
 
                 // Initial position syncing
+                // Get correct cat based on if player is host or client
                 if (isHosting)
                 {
                     GameObject npcCatPart = GameObject.Find("NPC Cat(Clone)/Cat Part 0");
@@ -395,18 +433,22 @@ namespace Cal_Multiplayer
                     }
                 }
 
+                // This loop executes while the networking isn't stopped using the token
                 while (!cancellationToken.IsCancellationRequested)
                 {
                     if (stream.DataAvailable)
                     {
+                        // Read the incoming data
                         int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken);
                         string message = Encoding.UTF8.GetString(buffer, 0, bytesRead).Trim();
                         Logger.LogInfo($"RX: {message}");
 
                         if (!string.IsNullOrWhiteSpace(message?.ToString()))
                         {
+                            // Split strings based on ";" because multiple commands can be on the same line
                             foreach (var command in message.Split(';', (char)StringSplitOptions.RemoveEmptyEntries))
                             {
+                                // Pass on the command to execute
                                 Logger.LogInfo($"Executing {command}");
                                 HandleNetworkCommand(command.Trim());
                             }
@@ -417,7 +459,8 @@ namespace Cal_Multiplayer
                         }
                     }
 
-                    await Task.Delay(100, cancellationToken); // Prevent tight loop
+                    // Prevent tight loop and high CPU usage
+                    await Task.Delay(100, cancellationToken);
                 }
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
@@ -426,18 +469,22 @@ namespace Cal_Multiplayer
             }
             finally
             {
+                // Disconnect gracefully
                 tcpClient.Close();
                 Logger.LogInfo("Client disconnected.");
             }
         }
 
+        // Handles and executes a string command 
         private void HandleNetworkCommand(string command)
         {
             try
             {
+                // Find the NPC to execute on
                 GameObject npc = GameObject.Find("NPC Cat(Clone)");
                 if (npc != null)
                 {
+                    // Get pathfinder. This will be modified for most actions
                     var npcPathfinder = npc.GetComponent("NPCPathfinder");
                     if (npcPathfinder != null)
                     {
@@ -455,9 +502,22 @@ namespace Cal_Multiplayer
                                 stream = client.GetStream();
                             }
 
+                            // Commands look like this
+                            // CommandName:Value1,Value2;
+                            // Split and get command
                             switch (command.Split(':')[0])
                             {
+                                // Tells the NPC to move left, right, etc...
+                                // Just like the prophets tell the NPC to move left or right
                                 case "MoveAction":
+                                    // Command meanings:
+                                    // R: Move right
+                                    // L: Move left
+                                    // J: Climb/Jump
+                                    // W: Turn into liquid
+                                    // S: Stop moving
+                                    // C: Stop climbing
+                                    // N: Turn back to cat
                                     switch (command.Split(':')[1])
                                     {
                                         case "R":
@@ -487,12 +547,16 @@ namespace Cal_Multiplayer
                                             break;
                                     }
                                     break;
+                                
+                                // Gracefully sets NPC position to new position
                                 case "PositionSync":
                                     var posX = float.Parse(command.Split(':')[1].Split(',')[0], CultureInfo.InvariantCulture);
                                     var posY = float.Parse(command.Split(':')[1].Split(',')[1], CultureInfo.InvariantCulture);
                                     Logger.LogInfo("Syncing clone");
                                     SyncCatPosition("NPC Cat(Clone)", posX, posY);
                                     break;
+                                
+                                // Instantly (without interpolation/smoothing) sets the NPC cat to a new starting position
                                 case "StartPos":
                                     var startPosX = float.Parse(command.Split(':')[1].Split(',')[0], CultureInfo.InvariantCulture);
                                     var startPosY = float.Parse(command.Split(':')[1].Split(',')[1], CultureInfo.InvariantCulture);
@@ -500,6 +564,7 @@ namespace Cal_Multiplayer
                                     SetCatPosition("Cat", startPosX, startPosY);
                                     isInFirstSyncPhase = false; // Enables auto pos syncs
                                     break;
+                                
                                 default:
                                     Logger.LogWarning($"Unknown command type: {command}");
                                     break;
@@ -526,6 +591,7 @@ namespace Cal_Multiplayer
             }
         }
 
+        // Starts and stops the networking
         private void ToggleNetworking()
         {
             if (isNetworkMultiplayerEnabled)
@@ -538,11 +604,13 @@ namespace Cal_Multiplayer
             }
         }
 
+        // Starts networking
         private void StartNetworking()
         {
             isNetworkMultiplayerEnabled = true;
             networkCancellationSource = new CancellationTokenSource();
 
+            // If no IP is provided start hosting, else connect
             if (string.IsNullOrEmpty(hostIP))
             {
                 Logger.LogInfo("Starting server...");
@@ -557,6 +625,7 @@ namespace Cal_Multiplayer
             }
         }
 
+        // Stops networking and disconnects
         private void StopNetworking()
         {
             isNetworkMultiplayerEnabled = false;
@@ -569,15 +638,19 @@ namespace Cal_Multiplayer
             Logger.LogInfo("Networking stopped.");
         }
 
+        // Forms/UI
         private void OnGUI()
         {
+            // Main networking form
             if (showForm)
             {
+                // Create window in the center
                 GUILayout.BeginArea(new Rect(Screen.width / 2 - 160, Screen.height / 2 - 80, 320, 180), GUI.skin.box);
                 GUILayout.BeginVertical();
-
+                
                 GUILayout.Label("You might need to pause the game to see your cursor.");
 
+                // IP entry field
                 GUILayout.Label("Enter IP to connect (leave empty to host):");
                 hostIP = GUILayout.TextField(hostIP, 15);
 
@@ -602,14 +675,16 @@ namespace Cal_Multiplayer
                 GUILayout.EndArea();
             }
 
+            // Sync settings form
             if (showSyncSettingsForm)
             {
                 GUILayout.BeginArea(new Rect(Screen.width / 2 - 160, Screen.height / 2 - 80, 320, 200), GUI.skin.box);
                 GUILayout.BeginVertical();
 
-                GUILayout.Label("Prioritize smoothness: Position syncing is less frequent, ensuring smoothness at the cost of position accouracy for movement happening between a second (ex.: Jumps might not be accourate).");
-                GUILayout.Label("Prioritize accouracy: Position syncing is more frequent, ensuring accouracy and less latency at the cost of smoothness (character's sides might blink).");
+                GUILayout.Label("Prioritize smoothness: Position syncing is less frequent, ensuring smoothness at the cost of position accuracy for movement happening between a second (ex.: Jumps might not be accurate).");
+                GUILayout.Label("Prioritize accuracy: Position syncing is more frequent, ensuring accuracy and less latency at the cost of smoothness (character's sides might blink).");
 
+                // Sets sync interval values to default
                 if (GUILayout.Button("Prioritize smoothness (default)"))
                 {
                     positionSyncInterval = 1.5f;
@@ -617,7 +692,8 @@ namespace Cal_Multiplayer
                     showForm = true;
                 }
 
-                if (GUILayout.Button("Priorizite accouracy"))
+                // Makes syncs more frequent for accuracy
+                if (GUILayout.Button("Prioritize accuracy"))
                 {
                     positionSyncInterval = 0.01f;
                     showSyncSettingsForm = false;
