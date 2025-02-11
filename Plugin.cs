@@ -493,15 +493,6 @@ namespace Cal_Multiplayer
                         {
                             Type catActionType = performActionMethod.GetParameters()[0].ParameterType;
 
-                            NetworkStream stream;
-                            if (isHosting)
-                            {
-                                 stream = incomingClient.GetStream();
-                            } else
-                            {
-                                stream = client.GetStream();
-                            }
-
                             // Commands look like this
                             // CommandName:Value1,Value2;
                             // Split and get command
