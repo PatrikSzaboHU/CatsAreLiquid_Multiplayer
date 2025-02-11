@@ -443,7 +443,7 @@ namespace Cal_Multiplayer
                         string message = Encoding.UTF8.GetString(buffer, 0, bytesRead).Trim();
                         Logger.LogInfo($"RX: {message}");
 
-                        if (!string.IsNullOrWhiteSpace(message?.ToString()))
+                        if (!string.IsNullOrWhiteSpace(message))
                         {
                             // Split strings based on ";" because multiple commands can be on the same line
                             foreach (var command in message.Split(';', (char)StringSplitOptions.RemoveEmptyEntries))
